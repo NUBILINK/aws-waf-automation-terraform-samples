@@ -29,7 +29,7 @@ resource "aws_kms_key" "wafkey" {
       "Principal" : {
         "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
       },
-        "Action": [ 
+        "Action": [
           "kms:Create*",
           "kms:Describe*",
           "kms:Enable*",
@@ -54,7 +54,7 @@ resource "aws_kms_key" "wafkey" {
     {
       "Effect": "Allow",
       "Principal": { "Service": "logs.${data.aws_region.current.name}.amazonaws.com" },
-      "Action": [ 
+      "Action": [
         "kms:Encrypt*",
         "kms:Decrypt*",
         "kms:ReEncrypt*",
@@ -62,7 +62,7 @@ resource "aws_kms_key" "wafkey" {
         "kms:Describe*"
       ],
       "Resource": "*"
-    }  
+    }
   ]
 }
 EOF
@@ -172,7 +172,7 @@ resource "aws_s3_bucket_public_access_block" "WafLogBucket" {
 }
 
 resource "aws_s3_bucket_policy" "wafbucketpolicy" {
-  count         = local.HttpFloodProtectionLogParserActivated == "yes" ? 1 : 0
+  count  = local.HttpFloodProtectionLogParserActivated == "yes" ? 1 : 0
   bucket = aws_s3_bucket.WafLogBucket[0].id
 
   policy = <<POLICY
@@ -221,7 +221,7 @@ data "aws_iam_policy" "s3Access" {
 }
 
 resource "aws_iam_role" "s3bucketaccessrole" {
-  name  = "s3-bucket-role-${random_id.server.hex}"
+  name = "s3-bucket-role-${random_id.server.hex}"
 
   assume_role_policy = <<POLICY
 {
@@ -241,8 +241,8 @@ POLICY
 }
 
 resource "aws_iam_role_policy_attachment" "s3bucketaccessrole-policy-attach" {
-  role       = "${aws_iam_role.s3bucketaccessrole.name}"
-  policy_arn = "${data.aws_iam_policy.s3Access.arn}"
+  role       = aws_iam_role.s3bucketaccessrole.name
+  policy_arn = data.aws_iam_policy.s3Access.arn
 }
 
 resource "aws_iam_role" "replication" {
@@ -301,7 +301,7 @@ POLICY
 }
 
 resource "aws_iam_role_policy_attachment" "test-attach" {
-  count = local.HttpFloodProtectionLogParserActivated == "yes" ? 1 : 0
+  count      = local.HttpFloodProtectionLogParserActivated == "yes" ? 1 : 0
   role       = aws_iam_role.replication[0].name
   policy_arn = aws_iam_policy.replication[0].arn
 }
@@ -436,7 +436,7 @@ POLICY
 }
 
 resource "aws_iam_role_policy_attachment" "test-attach-log" {
-  count  = local.LogParser == "yes" ? 1 : 0
+  count      = local.LogParser == "yes" ? 1 : 0
   role       = aws_iam_role.replicationaccesslog[0].name
   policy_arn = aws_iam_policy.replicationaccesslog[0].arn
 }
@@ -2246,7 +2246,7 @@ resource "aws_iam_role_policy" "WAFLogsAccess" {
                     "iam:AWSServiceName": "wafv2.amazonaws.com"
                 }
             }
-        }        
+        }
     ]
 }
 EOT
@@ -2949,7 +2949,7 @@ EOT
 
 
 resource "aws_lambda_function" "helper" {
-  function_name = "Helper-Lambda-${random_id.server.hex}"
+  function_name                  = "Helper-Lambda-${random_id.server.hex}"
   description                    = "This lambda function verifies the main project's dependencies, requirements and implement auxiliary functions"
   role                           = aws_iam_role.LambdaRoleHelper.arn
   handler                        = "helper.lambda_handler"
@@ -2959,7 +2959,7 @@ resource "aws_lambda_function" "helper" {
   timeout                        = 300
   memory_size                    = 128
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -2973,7 +2973,7 @@ resource "aws_lambda_function" "helper" {
 }
 
 resource "aws_lambda_function" "BadBotParser" {
-  count = var.BadBotProtectionActivated == "yes" ? 1 : 0
+  count                          = var.BadBotProtectionActivated == "yes" ? 1 : 0
   function_name                  = "BadBotParser-Lambda-${random_id.server.hex}"
   description                    = "This lambda function verifies the main project's dependencies, requirements and implement auxiliary functions"
   role                           = aws_iam_role.LambdaRoleBadBot[0].arn
@@ -2984,7 +2984,7 @@ resource "aws_lambda_function" "BadBotParser" {
   timeout                        = 300
   memory_size                    = 128
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3010,7 +3010,7 @@ resource "aws_lambda_function" "BadBotParser" {
 }
 
 resource "aws_lambda_function" "MoveS3LogsForPartition" {
-  count = local.ScannersProbesAthenaLogParser == "yes" ? 1 : 0
+  count                          = local.ScannersProbesAthenaLogParser == "yes" ? 1 : 0
   function_name                  = "MoveS3LogsForPartition-Lambda-${random_id.server.hex}"
   description                    = "This function is triggered by S3 event to move log files(upon their arrival in s3) from their original location to a partitioned folder structure created per timestamps in file names, hence allowing the usage of partitioning within AWS Athena."
   role                           = aws_iam_role.LambdaRolePartitionS3Logs[0].arn
@@ -3021,7 +3021,7 @@ resource "aws_lambda_function" "MoveS3LogsForPartition" {
   timeout                        = 300
   memory_size                    = 512
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3036,8 +3036,8 @@ resource "aws_lambda_function" "MoveS3LogsForPartition" {
 }
 
 resource "aws_lambda_function" "SetIPRetention" {
-  count         = var.IPRetentionPeriod == "yes" ? 1 : 0
-  function_name = "SetIPRetention-Lambda-${random_id.server.hex}"
+  count                          = var.IPRetentionPeriod == "yes" ? 1 : 0
+  function_name                  = "SetIPRetention-Lambda-${random_id.server.hex}"
   description                    = "This lambda function processes CW events for WAF UpdateIPSet API calls. It writes relevant ip retention data into a DynamoDB table."
   role                           = aws_iam_role.LambdaRoleSetIPRetention[0].arn
   handler                        = "set_ip_retention.lambda_handler"
@@ -3047,7 +3047,7 @@ resource "aws_lambda_function" "SetIPRetention" {
   timeout                        = 300
   memory_size                    = 128
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3066,7 +3066,7 @@ resource "aws_lambda_function" "SetIPRetention" {
 }
 
 resource "aws_lambda_function" "ReputationListsParser" {
-  count = var.ReputationListsProtectionActivated == "yes" ? 1 : 0
+  count                          = var.ReputationListsProtectionActivated == "yes" ? 1 : 0
   function_name                  = "ReputationListsParser-Lambda-${random_id.server.hex}"
   description                    = "This lambda function checks third-party IP reputation lists hourly for new IP ranges to block. These lists include the Spamhaus Dont Route Or Peer (DROP) and Extended Drop (EDROP) lists, the Proofpoint Emerging Threats IP list, and the Tor exit node list."
   role                           = aws_iam_role.LambdaRoleReputationListsParser[0].arn
@@ -3077,7 +3077,7 @@ resource "aws_lambda_function" "ReputationListsParser" {
   timeout                        = 300
   memory_size                    = 512
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3111,7 +3111,7 @@ resource "aws_lambda_function" "ReputationListsParser" {
 
 
 resource "aws_lambda_function" "CustomResource" {
-  function_name = "CustomResource-Lambda-${random_id.server.hex}"
+  function_name                  = "CustomResource-Lambda-${random_id.server.hex}"
   description                    = "Log permissions are defined in the LambdaRoleCustomResource policies"
   role                           = aws_iam_role.LambdaRoleCustomResource.arn
   handler                        = "custom-resource.lambda_handler"
@@ -3121,7 +3121,7 @@ resource "aws_lambda_function" "CustomResource" {
   timeout                        = 300
   memory_size                    = 128
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3137,8 +3137,8 @@ resource "aws_lambda_function" "CustomResource" {
 }
 
 resource "aws_lambda_function" "LogParser" {
-  count         = local.LogParser == "yes" ? 1 : 0
-  function_name = "LogParser-Lambda-${random_id.server.hex}"
+  count                          = local.LogParser == "yes" ? 1 : 0
+  function_name                  = "LogParser-Lambda-${random_id.server.hex}"
   description                    = "This function parses access logs to identify suspicious behavior, such as an abnormal amount of errors.It then blocks those IP addresses for a customer-defined period of time."
   role                           = aws_iam_role.LambdaRoleLogParser[0].arn
   handler                        = "log-parser.lambda_handler"
@@ -3148,7 +3148,7 @@ resource "aws_lambda_function" "LogParser" {
   timeout                        = 300
   memory_size                    = 512
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3184,7 +3184,7 @@ resource "aws_lambda_function" "LogParser" {
 }
 
 resource "aws_lambda_function" "AddAthenaPartitions" {
-  count = local.AthenaLogParser == "yes" ? 1 : 0
+  count                          = local.AthenaLogParser == "yes" ? 1 : 0
   function_name                  = "AthenaLogParser-Lambda-${random_id.server.hex}"
   description                    = "This function adds a new hourly partition to athena table. It runs every hour, triggered by a CloudWatch event."
   role                           = aws_iam_role.LambdaRoleAddAthenaPartitions[0].arn
@@ -3195,7 +3195,7 @@ resource "aws_lambda_function" "AddAthenaPartitions" {
   timeout                        = 300
   memory_size                    = 512
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3208,7 +3208,7 @@ resource "aws_lambda_function" "AddAthenaPartitions" {
 }
 
 resource "aws_lambda_function" "RemoveExpiredIP" {
-  count = var.IPRetentionPeriod == "yes" ? 1 : 0
+  count                          = var.IPRetentionPeriod == "yes" ? 1 : 0
   function_name                  = "RemoveExpiredIP-Lambda-${random_id.server.hex}"
   description                    = "This function adds a new hourly partition to athena table. It runs every hour, triggered by a CloudWatch event."
   role                           = aws_iam_role.LambdaRoleRemoveExpiredIP[0].arn
@@ -3219,7 +3219,7 @@ resource "aws_lambda_function" "RemoveExpiredIP" {
   timeout                        = 300
   memory_size                    = 512
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3237,7 +3237,7 @@ resource "aws_lambda_function" "RemoveExpiredIP" {
 }
 
 resource "aws_lambda_function" "CustomTimer" {
-  function_name = "CustomTimer-Lambda-${random_id.server.hex}"
+  function_name                  = "CustomTimer-Lambda-${random_id.server.hex}"
   description                    = "This lambda function counts X seconds and can be used to slow down component creation in CloudFormation"
   role                           = aws_iam_role.LambdaRoleCustomTimer.arn
   handler                        = "timer.lambda_handler"
@@ -3247,7 +3247,7 @@ resource "aws_lambda_function" "CustomTimer" {
   timeout                        = 300
   memory_size                    = 128
   kms_key_arn                    = aws_kms_key.wafkey.arn
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
   tracing_config {
     mode = "Active"
   }
@@ -3971,13 +3971,13 @@ resource "aws_cloudformation_stack" "trigger_codebuild_stack" {
     }
   },
   "Outputs" : {
-  
+
       "UUID" : {
-  
+
         "Description" : "UUID of the newly created  instance",
-  
+
         "Value" : { "Fn::GetAtt" : [ "CreateUniqueID", "UUID" ] }
-  
+
     }
   }
 }
@@ -3998,7 +3998,7 @@ STACK
 }
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Firehose Athena 
+# Firehose Athena
 # ----------------------------------------------------------------------------------------------------------------------
 
 resource "aws_iam_role" "FirehoseWAFLogsDeliveryStreamRole" {
@@ -4652,7 +4652,7 @@ resource "aws_api_gateway_deployment" "deployment" {
   depends_on = [
     aws_api_gateway_method.ApiGatewayBadBotMethod,
     aws_api_gateway_integration.integration
-    
+
   ]
 }
 
@@ -4666,7 +4666,7 @@ resource "aws_cloudwatch_log_group" "ApiGatewayBadBotStageAccessLogGroup" {
 }
 
 resource "aws_api_gateway_stage" "stage" {
-  count = var.BadBotProtectionActivated == "yes" ? 1 : 0
+  count                 = var.BadBotProtectionActivated == "yes" ? 1 : 0
   deployment_id         = aws_api_gateway_deployment.deployment.id
   rest_api_id           = aws_api_gateway_rest_api.api[0].id
   stage_name            = "ProdStage"
