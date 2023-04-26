@@ -143,9 +143,6 @@ resource "aws_s3_bucket" "WafLogBucket" {
   bucket        = "${random_id.server.hex}-waflogbucket"
   acl           = "private"
   force_destroy = true
-  versioning {
-    enabled = true
-  }
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -156,6 +153,14 @@ resource "aws_s3_bucket" "WafLogBucket" {
   logging {
     target_bucket = aws_s3_bucket.accesslogbucket[0].bucket
     target_prefix = "WAF_Logs/"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "WafLogBucket" {
+  count  = local.HttpFloodProtectionLogParserActivated == "yes" ? 1 : 0
+  bucket = aws_s3_bucket.WafLogBucket[0].id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 
@@ -322,10 +327,20 @@ resource "aws_s3_bucket" "accesslogbucket" {
   }
 }
 
+resource "aws_s3_bucket_ownership_controls" "accesslogbucket" {
+  count  = local.LogParser == "yes" ? 1 : 0
+  bucket = aws_s3_bucket.accesslogbucket[0].id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
 resource "aws_s3_bucket_acl" "accesslogbucket" {
   count  = local.LogParser == "yes" ? 1 : 0
   bucket = aws_s3_bucket.accesslogbucket[0].id
   acl    = "log-delivery-write"
+
+  depends_on = [aws_s3_bucket_ownership_controls.accesslogbucket[0]]
 }
 
 resource "aws_s3_bucket_versioning" "accesslogbucket" {
