@@ -311,17 +311,28 @@ resource "aws_iam_role_policy_attachment" "test-attach" {
 resource "aws_s3_bucket" "accesslogbucket" {
   count         = local.LogParser == "yes" ? 1 : 0
   bucket        = "${random_id.server.hex}-accesslogging"
-  acl           = "log-delivery-write"
   force_destroy = true
-  versioning {
-    enabled = true
-  }
+
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
         sse_algorithm = var.sse_algorithm
       }
     }
+  }
+}
+
+resource "aws_s3_bucket_acl" "accesslogbucket" {
+  count  = local.LogParser == "yes" ? 1 : 0
+  bucket = aws_s3_bucket.accesslogbucket[0].id
+  acl    = "log-delivery-write"
+}
+
+resource "aws_s3_bucket_versioning" "accesslogbucket" {
+  count  = local.LogParser == "yes" ? 1 : 0
+  bucket = aws_s3_bucket.accesslogbucket[0].id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 
